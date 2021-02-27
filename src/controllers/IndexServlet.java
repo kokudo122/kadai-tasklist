@@ -34,14 +34,21 @@ public class IndexServlet extends HttpServlet {
      */
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         EntityManager em = DBUtil.createEntityManager();
+        int page = 1;
+        try {
+            page = Integer.parseInt(request.getParameter("page"));
+        } catch(NumberFormatException e) {}
 
-        List<Task> tasks = em.createNamedQuery("getAllTasks", Task.class).getResultList();
-        response.getWriter().append(Integer.valueOf(tasks.size()).toString());
+        List<Task> tasks = em.createNamedQuery("getAllTasks", Task.class).setFirstResult(5 * (page - 1)).setMaxResults(5).getResultList();
+        long task_count = (long)em.createNamedQuery("getTasksCount", Long.class)
+                .getSingleResult();
 
         em.close();
         request.setAttribute("tasks", tasks);
+        request.setAttribute("tasks_count", task_count);
+        request.setAttribute("page", page);
         if(request.getSession().getAttribute("flush") != null) {
-            // セッションスコープ内のフラッシュメッセージをリクエストスコープに保存し、セッションスコープからは削除する
+
             request.setAttribute("flush", request.getSession().getAttribute("flush"));
             request.getSession().removeAttribute("flush");
         }
